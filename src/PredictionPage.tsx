@@ -344,7 +344,7 @@ export default function PredictionPage() {
   ] as const;
 
   const publicClient = usePublicClient();
-  const {account} = useAccount();
+  // const {account} = useAccount();
 
   interface LogEntry {
     address: string;
@@ -436,7 +436,7 @@ export default function PredictionPage() {
 
   const { data: tokensData } = useReadContract({
     abi: CRYPTO_POOL_ABI,
-    address: CRYPTO_POOL_ADDRESSES[asset as keyof typeof CRYPTO_POOL_ADDRESSES],
+    address: CRYPTO_POOL_ADDRESSES[asset as keyof typeof CRYPTO_POOL_ADDRESSES] as `0x${string}`,
     functionName: 'getTokens',
   });
 
@@ -474,7 +474,6 @@ export default function PredictionPage() {
     }));
   }, [upBalance, downBalance]);
 
-  console.log("Balanceof " , balances , account);
 
   useEffect(() => {
     console.log('Watching for events...')
@@ -624,7 +623,7 @@ export default function PredictionPage() {
 
           <h2>Targated Price</h2>
           <div className="price-display">
-            <span className="current-price">${formatEther(targetAmount)}</span>
+            {/* <span className="current-price">${formatEther(targetAmount ?? '')}</span> */}
           </div>
           <div>
   Balance of Token Up: {balances.up ? formatEther(balances.up) : ''}   ' '
