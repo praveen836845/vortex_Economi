@@ -466,13 +466,13 @@ export default function PredictionPage() {
   });
 
   // 4. Update balances state when new data arrives
-  useEffect(() => {
-    setBalances(prev => ({
-      ...prev,
-      ...(upBalance !== undefined && { up: upBalance }),
-      ...(downBalance !== undefined && { down: downBalance })
-    }));
-  }, [upBalance, downBalance]);
+  // useEffect(() => {
+  //   setBalances(prev => ({
+  //     ...prev,
+  //     ...(upBalance !== undefined && { up: upBalance }),
+  //     ...(downBalance !== undefined && { down: downBalance })
+  //   }));
+  // }, [upBalance, downBalance]);
 
 
   useEffect(() => {
