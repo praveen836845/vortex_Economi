@@ -1738,65 +1738,65 @@ export default function HomePage() {
     }
   ] as const;
 
-   const ERC20_ABI = [
+  const ERC20_ABI = [
     {
       "constant": true,
-      "inputs": [{"name": "owner", "type": "address"}],
+      "inputs": [{ "name": "owner", "type": "address" }],
       "name": "balanceOf",
-      "outputs": [{"name": "", "type": "uint256"}],
+      "outputs": [{ "name": "", "type": "uint256" }],
       "type": "function"
     },
     {
       "constant": false,
       "inputs": [
-        {"name": "spender", "type": "address"},
-        {"name": "amount", "type": "uint256"}
+        { "name": "spender", "type": "address" },
+        { "name": "amount", "type": "uint256" }
       ],
       "name": "approve",
-      "outputs": [{"name": "", "type": "bool"}],
+      "outputs": [{ "name": "", "type": "bool" }],
       "type": "function"
     },
     {
       "constant": true,
       "inputs": [],
       "name": "decimals",
-      "outputs": [{"name": "", "type": "uint8"}],
+      "outputs": [{ "name": "", "type": "uint8" }],
       "type": "function"
     },
     {
       "constant": true,
       "inputs": [],
       "name": "symbol",
-      "outputs": [{"name": "", "type": "string"}],
+      "outputs": [{ "name": "", "type": "string" }],
       "type": "function"
     },
     {
       "constant": false,
       "inputs": [
-        {"name": "recipient", "type": "address"},
-        {"name": "amount", "type": "uint256"}
+        { "name": "recipient", "type": "address" },
+        { "name": "amount", "type": "uint256" }
       ],
       "name": "transfer",
-      "outputs": [{"name": "", "type": "bool"}],
+      "outputs": [{ "name": "", "type": "bool" }],
       "type": "function"
     },
     {
       "constant": false,
       "inputs": [
-        {"name": "sender", "type": "address"},
-        {"name": "recipient", "type": "address"},
-        {"name": "amount", "type": "uint256"}
+        { "name": "sender", "type": "address" },
+        { "name": "recipient", "type": "address" },
+        { "name": "amount", "type": "uint256" }
       ],
       "name": "transferFrom",
-      "outputs": [{"name": "", "type": "bool"}],
+      "outputs": [{ "name": "", "type": "bool" }],
       "type": "function"
     },
     {
       "anonymous": false,
       "inputs": [
-        {"indexed": true, "name": "owner", "type": "address"},
-        {"indexed": true, "name": "spender", "type": "address"},
-        {"indexed": false, "name": "value", "type": "uint256"}
+        { "indexed": true, "name": "owner", "type": "address" },
+        { "indexed": true, "name": "spender", "type": "address" },
+        { "indexed": false, "name": "value", "type": "uint256" }
       ],
       "name": "Approval",
       "type": "event"
@@ -1804,9 +1804,9 @@ export default function HomePage() {
     {
       "anonymous": false,
       "inputs": [
-        {"indexed": true, "name": "from", "type": "address"},
-        {"indexed": true, "name": "to", "type": "address"},
-        {"indexed": false, "name": "value", "type": "uint256"}
+        { "indexed": true, "name": "from", "type": "address" },
+        { "indexed": true, "name": "to", "type": "address" },
+        { "indexed": false, "name": "value", "type": "uint256" }
       ],
       "name": "Transfer",
       "type": "event"
@@ -1831,17 +1831,17 @@ export default function HomePage() {
   const [lpAmount, setLpAmount] = useState('');
   const [lpBalance, setLpBalance] = useState<bigint>();
   const [pairAddress, setPairAddress] = useState<Address | null>();
-const [lpTokenAddress, setLpTokenAddress] = useState<Address | null>(null);
+  const [lpTokenAddress, setLpTokenAddress] = useState<Address | null>(null);
 
-const getTokenSymbol = (address: Address): string => {
+  const getTokenSymbol = (address: Address): string => {
 
-  const token = TOKEN_LIST.find(
-    (t) => t.address.toLowerCase() === address.toLowerCase()
-  );
+    const token = TOKEN_LIST.find(
+      (t) => t.address.toLowerCase() === address.toLowerCase()
+    );
 
-  
-  return token?.symbol || `Token`;
-};
+
+    return token?.symbol || `Token`;
+  };
 
   const { data: fetchedPairAddress, refetch: refetchFetchedPairAddress } = useReadContract({
     abi: FACTORY_ABI,
@@ -1850,9 +1850,9 @@ const getTokenSymbol = (address: Address): string => {
     args: [selectedTokenA, selectedTokenB]
   });
 
-  
-  
-  const { data: fetchedLpBalanceData, refetch: refetchFetchedLpBalanceData} = useReadContract({
+
+
+  const { data: fetchedLpBalanceData, refetch: refetchFetchedLpBalanceData } = useReadContract({
     abi: TOKEN_PAIR_ABI,
     address: pairAddress as Address, // Use pairAddress instead of hardcoded address
     functionName: 'balanceOf',
@@ -1871,228 +1871,239 @@ const getTokenSymbol = (address: Address): string => {
     }
   });
 
-  
-useEffect(() => {
+  const handleFetchPairAddressAndLpTokens = async () => {
+    // Fetch and get the latest pair address data
+    const pairResult = await refetchFetchedPairAddress();
+    setPairAddress(pairResult.data); // Use data from the refetch result
 
-  refetchFetchedPairAddress();
-  
-  setPairAddress(fetchedPairAddress);
+    // Fetch and get the latest LP balance data
+    const lpResult = await refetchFetchedLpBalanceData();
+    setLpBalance(lpResult.data); // Use data from the refetch result
 
-  refetchFetchedLpBalanceData();
-  
-  setLpBalance(fetchedLpBalanceData);
+    // Log the results
+    console.log("Fetched LP Balance: ", lpResult.data);
+    console.log("Fetched Pair Address: ", pairResult.data);
+  }
 
+  useEffect(() => {
 
-},[ isAddLiquidity, tokenAAmount, selectedTokenA, selectedTokenB]);
+    handleFetchPairAddressAndLpTokens();
 
-const handleLiquidityAction = async () => {
-  const loadingToast = toast.loading(
-    `${isAddLiquidity ? 'Adding' : 'Removing'} liquidity...`
-  );
-  
-  try {
-    if (!isConnected || !address) {
-      toast.error("Please connect your wallet first.");
-      return;
-    } 
+  }, [isAddLiquidity, tokenAAmount, selectedTokenA, selectedTokenB]);
 
-    const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
-    const isETHInvolved = [selectedTokenA, selectedTokenB].includes(WETH_ADDRESS);
+  const handleLiquidityAction = async () => {
+    const loadingToast = toast.loading(
+      `${isAddLiquidity ? 'Adding' : 'Removing'} liquidity...`
+    );
 
-    if (isAddLiquidity) {
-      const loadingToast = toast.loading('Processing liquidity addition...');
-    
-      try {
-        if (!isConnected || !address) {
-          toast.error("Please connect your wallet first.");
+    try {
+      if (!isConnected || !address) {
+        toast.error("Please connect your wallet first.");
+        return;
+      }
+
+      const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
+      const isETHInvolved = [selectedTokenA, selectedTokenB].includes(WETH_ADDRESS);
+
+      if (isAddLiquidity) {
+        const loadingToast = toast.loading('Processing liquidity addition...');
+
+        try {
+          if (!isConnected || !address) {
+            toast.error("Please connect your wallet first.");
+            return;
+          }
+
+          const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
+          const isETHInvolved = [selectedTokenA, selectedTokenB].includes(WETH_ADDRESS);
+
+          if (isETHInvolved) {
+            // Handle ETH liquidity addition
+            const [ethToken, erc20Token] =
+              selectedTokenA === WETH_ADDRESS
+                ? [selectedTokenA, selectedTokenB]
+                : [selectedTokenB, selectedTokenA];
+
+            const [ethAmount, erc20Amount] =
+              selectedTokenA === WETH_ADDRESS
+                ? [tokenAAmount, tokenBAmount]
+                : [tokenBAmount, tokenAAmount];
+
+            // Approve ERC20 token
+            toast("Approving ERC20 token...", { icon: '🔃' });
+            await writeContractAsync({
+              address: erc20Token,
+              abi: ERC20_ABI,
+              functionName: 'approve',
+              args: [ROUTER_ADDRESS, parseEther(erc20Amount)]
+            });
+
+            // Add liquidity with ETH
+            toast("Adding liquidity with ETH...", { icon: '🔃' });
+            console.log(" Params ", parseEther(erc20Amount), parseEther((Number(erc20Amount) * 0.99).toString()), parseEther((Number(ethAmount) * 0.99).toString()), parseEther(ethAmount));
+            const tx = await writeContractAsync({
+              abi: ROUTER_ABI,
+              address: ROUTER_ADDRESS,
+              functionName: 'addLiquidityETH',
+              args: [
+                erc20Token,
+                parseEther(erc20Amount),
+                parseEther((Number(erc20Amount) * 0.99).toString()), // FIX: ensure correct decimals
+                parseEther((Number(ethAmount) * 0.99).toString()),   // FIX: ensure correct decimals
+                address,
+                BigInt(deadline)
+              ],
+              value: parseEther(ethAmount)
+            });
+
+          } else {
+            // Handle ERC20 token pair
+            toast("Approving tokens...", { icon: '🔃' });
+            await Promise.all([
+              writeContractAsync({
+                address: selectedTokenA,
+                abi: ERC20_ABI,
+                functionName: 'approve',
+                args: [ROUTER_ADDRESS, parseEther(tokenAAmount)]
+              }),
+              writeContractAsync({
+                address: selectedTokenB,
+                abi: ERC20_ABI,
+                functionName: 'approve',
+                args: [ROUTER_ADDRESS, parseEther(tokenBAmount)]
+              })
+            ]);
+
+            // Add liquidity with ERC20 tokens
+            toast("Adding liquidity...", { icon: '🔃' });
+            const tx = await writeContractAsync({
+              abi: ROUTER_ABI,
+              address: ROUTER_ADDRESS,
+              functionName: 'addLiquidity',
+              args: [
+                selectedTokenA,
+                selectedTokenB,
+                parseEther(tokenAAmount),
+                parseEther(tokenBAmount),
+                parseEther((Number(tokenAAmount) * 0.99).toString()),
+                parseEther((Number(tokenBAmount) * 0.99).toString()),
+                address,
+                BigInt(deadline)
+              ]
+            });
+          }
+
+          toast.success(
+            <div>
+              <p>Liquidity added successfully!</p>
+            </div>,
+            { duration: 8000 }
+          );
+
+          setTokenAAmount('');
+          setTokenBAmount('');
+
+        } catch (error) {
+          console.error("Error adding liquidity:", error);
+          toast.error(
+            `Error: ${error instanceof Error ? error.message : 'Transaction failed'}`
+          );
+        } finally {
+          toast.dismiss(loadingToast);
+        }
+      } else {
+        // Remove liquidity logic
+        if (!lpAmount || Number(lpAmount) <= 0) {
+          toast.error("Please enter valid LP amount");
           return;
         }
-    
-        const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
-        const isETHInvolved = [selectedTokenA, selectedTokenB].includes(WETH_ADDRESS);
-    
+
+        const liquidity = parseEther(lpAmount);
+
+        // Approve LP tokens
+        toast("Approving LP tokens...", { icon: '🔃' });
+        await writeContractAsync({
+          address: pairAddress!,
+          abi: ERC20_ABI,
+          functionName: 'approve',
+          args: [ROUTER_ADDRESS, liquidity]
+        });
+
         if (isETHInvolved) {
-          // Handle ETH liquidity addition
-          const [ethToken, erc20Token] = 
-            selectedTokenA === WETH_ADDRESS 
-              ? [selectedTokenA, selectedTokenB] 
-              : [selectedTokenB, selectedTokenA];
-    
-          const [ethAmount, erc20Amount] = 
-            selectedTokenA === WETH_ADDRESS 
-              ? [tokenAAmount, tokenBAmount] 
-              : [tokenBAmount, tokenAAmount];
-    
-          // Approve ERC20 token
-          toast("Approving ERC20 token...", { icon: '🔃' });
+          const [token, eth] = selectedTokenA === WETH_ADDRESS
+            ? [selectedTokenB, selectedTokenA]
+            : [selectedTokenA, selectedTokenB];
+
+          const amountTokenMin = parseEther((Number(tokenAAmount) * 0.99).toString());
+          const amountETHMin = parseEther((Number(tokenBAmount) * 0.99).toString());
+
           await writeContractAsync({
-            address: erc20Token,
-            abi: ERC20_ABI,
-            functionName: 'approve',
-            args: [ROUTER_ADDRESS, parseEther(erc20Amount)]
-          });
-         
-          // Add liquidity with ETH
-          toast("Adding liquidity with ETH...", { icon: '🔃' });
-          console.log(" Params ",   parseEther(erc20Amount),parseEther((Number(erc20Amount) * 0.99).toString()), parseEther((Number(ethAmount) * 0.99).toString()), parseEther(ethAmount));
-          const tx = await writeContractAsync({
             abi: ROUTER_ABI,
             address: ROUTER_ADDRESS,
-            functionName: 'addLiquidityETH',
+            functionName: 'removeLiquidityETH',
             args: [
-              erc20Token,
-              parseEther(erc20Amount),
-              parseEther((Number(erc20Amount) * 0.99).toString()), // FIX: ensure correct decimals
-              parseEther((Number(ethAmount) * 0.99).toString()),   // FIX: ensure correct decimals
+              token,
+              liquidity,
+              amountTokenMin,
+              amountETHMin,
               address,
               BigInt(deadline)
-            ],
-            value: parseEther(ethAmount)
+            ]
           });
-    
         } else {
-          // Handle ERC20 token pair
-          toast("Approving tokens...", { icon: '🔃' });
-          await Promise.all([
-            writeContractAsync({
-              address: selectedTokenA,
-              abi: ERC20_ABI,
-              functionName: 'approve',
-              args: [ROUTER_ADDRESS, parseEther(tokenAAmount)]
-            }),
-            writeContractAsync({
-              address: selectedTokenB,
-              abi: ERC20_ABI,
-              functionName: 'approve',
-              args: [ROUTER_ADDRESS, parseEther(tokenBAmount)]
-            })
-          ]);
-    
-          // Add liquidity with ERC20 tokens
-          toast("Adding liquidity...", { icon: '🔃' });
-          const tx = await writeContractAsync({
+          const amountAMin = parseEther((Number(tokenAAmount) * 0.99).toString());
+          const amountBMin = parseEther((Number(tokenBAmount) * 0.99).toString());
+
+          await writeContractAsync({
             abi: ROUTER_ABI,
             address: ROUTER_ADDRESS,
-            functionName: 'addLiquidity',
+            functionName: 'removeLiquidity',
             args: [
               selectedTokenA,
               selectedTokenB,
-              parseEther(tokenAAmount),
-              parseEther(tokenBAmount),
-              parseEther((Number(tokenAAmount) * 0.99).toString()),
-              parseEther((Number(tokenBAmount) * 0.99).toString()),
+              liquidity,
+              amountAMin,
+              amountBMin,
               address,
               BigInt(deadline)
             ]
           });
         }
-    
-        toast.success(
-          <div>
-            <p>Liquidity added successfully!</p>
-          </div>,
-          { duration: 8000 }
-        );
-    
-        setTokenAAmount('');
-        setTokenBAmount('');
-        
-      } catch (error) {
-        console.error("Error adding liquidity:", error);
-        toast.error(
-          `Error: ${error instanceof Error ? error.message : 'Transaction failed'}`
-        );
-      } finally {
-        toast.dismiss(loadingToast);
+
+        toast.success("Liquidity removed successfully!");
+        setLpAmount('');
       }
-    } else {
-      // Remove liquidity logic
-      if (!lpAmount || Number(lpAmount) <= 0) {
-        toast.error("Please enter valid LP amount");
-        return;
-      }
-
-      const liquidity = parseEther(lpAmount);
-
-      // Approve LP tokens
-      toast("Approving LP tokens...", { icon: '🔃' });
-      await writeContractAsync({
-        address: pairAddress!,
-        abi: ERC20_ABI,
-        functionName: 'approve',
-        args: [ROUTER_ADDRESS, liquidity]
-      });
-
-      if (isETHInvolved) {
-        const [token, eth] = selectedTokenA === WETH_ADDRESS
-          ? [selectedTokenB, selectedTokenA]
-          : [selectedTokenA, selectedTokenB];
-
-        const amountTokenMin = parseEther((Number(tokenAAmount) * 0.99).toString());
-        const amountETHMin = parseEther((Number(tokenBAmount) * 0.99).toString());
-
-        await writeContractAsync({
-          abi: ROUTER_ABI,
-          address: ROUTER_ADDRESS,
-          functionName: 'removeLiquidityETH',
-          args: [
-            token,
-            liquidity,
-            amountTokenMin,
-            amountETHMin,
-            address,
-            BigInt(deadline)
-          ]
-        });
-      } else {
-        const amountAMin = parseEther((Number(tokenAAmount) * 0.99).toString());
-        const amountBMin = parseEther((Number(tokenBAmount) * 0.99).toString());
-
-        await writeContractAsync({
-          abi: ROUTER_ABI,
-          address: ROUTER_ADDRESS,
-          functionName: 'removeLiquidity',
-          args: [
-            selectedTokenA,
-            selectedTokenB,
-            liquidity,
-            amountAMin,
-            amountBMin,
-            address,
-            BigInt(deadline)
-          ]
-        });
-      }
-
-      toast.success("Liquidity removed successfully!");
-      setLpAmount('');
+    } catch (error) {
+      // Error handling
+    } finally {
+      toast.dismiss(loadingToast);
     }
-  } catch (error) {
-    // Error handling
-  } finally {
-    toast.dismiss(loadingToast);
-  }
-};
- 
-useEffect(() => {
-  // Define delay time (in milliseconds)
-  const DEBOUNCE_DELAY = 1000;
+  };
 
-  // --- Handle immediate clearing ---
-  // If tokenAAmount is empty, clear tokenBAmount immediately and do nothing else.
-  if (!tokenAAmount || tokenAAmount.trim() === '') {
-    console.log("Token A Amount is empty, clearing Token B Amount immediately.");
-    setTokenBAmount('');
-    return; // Stop processing for this effect run
-  }
+  useEffect(() => {
 
-  // --- Setup Debounce Timer ---
-  // This function contains the core logic you want to debounce
-  const executeFetchAndCalculate = async () => {
-    console.log("Debounce delay finished. Fetching reserves and calculating...");
- 
-    try {
-      refetchAmountsOut()
+
+
+    refetchFetchedLpBalanceData();
+
+    // Define delay time (in milliseconds)
+    const DEBOUNCE_DELAY = 100;
+
+    // --- Handle immediate clearing ---
+    // If tokenAAmount is empty, clear tokenBAmount immediately and do nothing else.
+    if (!tokenAAmount || tokenAAmount.trim() === '') {
+      console.log("Token A Amount is empty, clearing Token B Amount immediately.");
+      setTokenBAmount('');
+      return; // Stop processing for this effect run
+    }
+
+    // --- Setup Debounce Timer ---
+    // This function contains the core logic you want to debounce
+    const executeFetchAndCalculate = async () => {
+      console.log("Debounce delay finished. Fetching reserves and calculating...");
+
+      try {
+        refetchAmountsOut()
         // Use the 'reserves' state which should be updated by the refetch
         console.log("Reserves (state after refetch):", reserves);
 
@@ -2104,55 +2115,55 @@ useEffect(() => {
 
         // Double-check conditions before calculating
         if (isNaN(numericTokenAAmount) || numericTokenAAmount <= 0) {
-             console.log("Token A amount invalid after debounce delay. Clearing B.");
-             setTokenBAmount('');
-             return;
+          console.log("Token A amount invalid after debounce delay. Clearing B.");
+          setTokenBAmount('');
+          return;
         }
 
         if (reserveA > BigInt(0) && reserveB > BigInt(0)) {
-            const numReserveA = Number(reserveA); // Convert BigInt for ratio calculation
-            const numReserveB = Number(reserveB);
+          const numReserveA = Number(reserveA); // Convert BigInt for ratio calculation
+          const numReserveB = Number(reserveB);
 
-            if (numReserveA === 0) {
-                console.warn("Reserve A is zero, cannot calculate ratio.");
-                setTokenBAmount('');
-                return;
-            }
+          if (numReserveA === 0) {
+            console.warn("Reserve A is zero, cannot calculate ratio.");
+            setTokenBAmount('');
+            return;
+          }
 
-            const ratio = numReserveB / numReserveA;
-            console.log("Calculating Token B amount...");
-            console.log("Token A Amount:", numericTokenAAmount);
-            console.log("Reserve A:", numReserveA);
-            console.log("Reserve B:", numReserveB);
-            console.log("Ratio:", ratio);
+          const ratio = numReserveB / numReserveA;
+          console.log("Calculating Token B amount...");
+          console.log("Token A Amount:", numericTokenAAmount);
+          console.log("Reserve A:", numReserveA);
+          console.log("Reserve B:", numReserveB);
+          console.log("Ratio:", ratio);
 
-            const calculatedB = (numericTokenAAmount * ratio).toFixed(18);
-            console.log("Calculated Token B amount =", calculatedB);
-            setTokenBAmount(calculatedB);
+          const calculatedB = (numericTokenAAmount * ratio).toFixed(18);
+          console.log("Calculated Token B amount =", calculatedB);
+          setTokenBAmount(calculatedB);
         } else {
-            console.log("Skipping calculation: Invalid reserves.", reserveA?.toString(), reserveB?.toString());
-            setTokenBAmount(''); // Clear B if reserves are invalid
+          console.log("Skipping calculation: Invalid reserves.", reserveA?.toString(), reserveB?.toString());
+          setTokenBAmount(''); // Clear B if reserves are invalid
         }
-    } catch (error) {
+      } catch (error) {
         console.error("Error during debounced fetch/calculation:", error);
         setTokenBAmount(''); // Clear B on error
-    }
-  };
+      }
+    };
 
-  // Set a timer to execute the function after the delay
-  console.log(`Setting ${DEBOUNCE_DELAY}ms debounce timer for amount: ${tokenAAmount}`);
-  const timerId = setTimeout(executeFetchAndCalculate, DEBOUNCE_DELAY);
+    // Set a timer to execute the function after the delay
+    console.log(`Setting ${DEBOUNCE_DELAY}ms debounce timer for amount: ${tokenAAmount}`);
+    const timerId = setTimeout(executeFetchAndCalculate, DEBOUNCE_DELAY);
 
-  // --- Cleanup Function ---
-  // Return a function that clears the timer. React runs this when:
-  // 1. The component unmounts.
-  // 2. *Before* the effect runs again due to dependency changes.
-  return () => {
-    console.log("Cleanup: Clearing timer ID:", timerId);
-    clearTimeout(timerId);
-  };
+    // --- Cleanup Function ---
+    // Return a function that clears the timer. React runs this when:
+    // 1. The component unmounts.
+    // 2. *Before* the effect runs again due to dependency changes.
+    return () => {
+      console.log("Cleanup: Clearing timer ID:", timerId);
+      clearTimeout(timerId);
+    };
 
-}, [ 
+  }, [
     tokenAAmount,
     selectedTokenA,
     selectedTokenB,
@@ -2162,122 +2173,123 @@ useEffect(() => {
     // refetchFetchedPairAddress,
     // refetchAmountsOut,
     // fetchedPairAddress, // Usually derived, not a trigger
-    // reserves           // Usually derived, not a trigger
-]); // Keep dependencies focused on what should trigger the *start* of the debounce
+    reserves,    // Usually derived, not a trigger
+    isAddLiquidity
+  ]); // Keep dependencies focused on what should trigger the *start* of the debounce
 
-const handleSwapNew = async () => {
-  const loadingToast = toast.loading('Processing swap...');
-  
-  try {
-    if (!isConnected || !address) {
-      toast.error("Please connect your wallet first.");
-      return;
+  const handleSwapNew = async () => {
+    const loadingToast = toast.loading('Processing swap...');
+
+    try {
+      if (!isConnected || !address) {
+        toast.error("Please connect your wallet first.");
+        return;
+      }
+
+      if (!swapFromAmount || Number(swapFromAmount) <= 0) {
+        toast.error("Please enter a valid amount to swap");
+        return;
+      }
+
+      if (selectedTokenA === selectedTokenB) {
+        toast.error("Cannot swap the same token");
+        return;
+      }
+
+      const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
+      const isETHInvolved = [selectedTokenA, selectedTokenB].includes(WETH_ADDRESS);
+      const amountIn = parseEther(swapFromAmount);
+      const amountOutMin = parseEther((Number(swapToAmount) * 0.99).toString()); // 1% slippage
+
+      // Handle different swap types
+      if (selectedTokenA === WETH_ADDRESS) {
+        // ETH -> Token
+        toast("Swapping ETH for tokens...", { icon: '🔃' });
+        const tx = await writeContractAsync({
+          abi: ROUTER_ABI,
+          address: ROUTER_ADDRESS,
+          functionName: 'swapExactETHForTokens',
+          args: [
+            amountOutMin,
+            [WETH_ADDRESS, selectedTokenB],
+            address,
+            BigInt(deadline)
+          ],
+          value: amountIn
+        });
+      } else if (selectedTokenB === WETH_ADDRESS) {
+        // Token -> ETH
+        toast("Approving token...", { icon: '🔃' });
+        await writeContractAsync({
+          address: selectedTokenA,
+          abi: ERC20_ABI,
+          functionName: 'approve',
+          args: [ROUTER_ADDRESS, amountIn]
+        });
+
+        toast("Swapping tokens for ETH...", { icon: '🔃' });
+        const tx = await writeContractAsync({
+          abi: ROUTER_ABI,
+          address: ROUTER_ADDRESS,
+          functionName: 'swapExactTokensForETH',
+          args: [
+            amountIn,
+            amountOutMin,
+            [selectedTokenA, WETH_ADDRESS],
+            address,
+            BigInt(deadline)
+          ]
+        });
+      } else {
+        // Token -> Token
+        toast("Approving token...", { icon: '🔃' });
+        await writeContractAsync({
+          address: selectedTokenA,
+          abi: ERC20_ABI,
+          functionName: 'approve',
+          args: [ROUTER_ADDRESS, amountIn]
+        });
+
+        toast("Swapping tokens...", { icon: '🔃' });
+        const tx = await writeContractAsync({
+          abi: ROUTER_ABI,
+          address: ROUTER_ADDRESS,
+          functionName: 'swapExactTokensForTokens',
+          args: [
+            amountIn,
+            amountOutMin,
+            [selectedTokenA, selectedTokenB],
+            address,
+            BigInt(deadline)
+          ]
+        });
+      }
+
+      toast.success(
+        <div>
+          <p>Swap executed successfully!</p>
+        </div>,
+        { duration: 8000 }
+      );
+
+      setSwapFromAmount('');
+      setSwapToAmount('');
+
+    } catch (error) {
+      console.error("Error swapping tokens:", error);
+      toast.error(
+        `Error: ${error instanceof Error ? error.message : 'Swap failed'}`
+      );
+    } finally {
+      toast.dismiss(loadingToast);
     }
-
-    if (!swapFromAmount || Number(swapFromAmount) <= 0) {
-      toast.error("Please enter a valid amount to swap");
-      return;
-    }
-
-    if (selectedTokenA === selectedTokenB) {
-      toast.error("Cannot swap the same token");
-      return;
-    }
-
-    const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
-    const isETHInvolved = [selectedTokenA, selectedTokenB].includes(WETH_ADDRESS);
-    const amountIn = parseEther(swapFromAmount);
-    const amountOutMin = parseEther((Number(swapToAmount) * 0.99).toString()); // 1% slippage
-
-    // Handle different swap types
-    if (selectedTokenA === WETH_ADDRESS) {
-      // ETH -> Token
-      toast("Swapping ETH for tokens...", { icon: '🔃' });
-      const tx = await writeContractAsync({
-        abi: ROUTER_ABI,
-        address: ROUTER_ADDRESS,
-        functionName: 'swapExactETHForTokens',
-        args: [
-          amountOutMin,
-          [WETH_ADDRESS, selectedTokenB],
-          address,
-          BigInt(deadline)
-        ],
-        value: amountIn
-      });
-    } else if (selectedTokenB === WETH_ADDRESS) {
-      // Token -> ETH
-      toast("Approving token...", { icon: '🔃' });
-      await writeContractAsync({
-        address: selectedTokenA,
-        abi: ERC20_ABI,
-        functionName: 'approve',
-        args: [ROUTER_ADDRESS, amountIn]
-      });
-
-      toast("Swapping tokens for ETH...", { icon: '🔃' });
-      const tx = await writeContractAsync({
-        abi: ROUTER_ABI,
-        address: ROUTER_ADDRESS,
-        functionName: 'swapExactTokensForETH',
-        args: [
-          amountIn,
-          amountOutMin,
-          [selectedTokenA, WETH_ADDRESS],
-          address,
-          BigInt(deadline)
-        ]
-      });
-    } else {
-      // Token -> Token
-      toast("Approving token...", { icon: '🔃' });
-      await writeContractAsync({
-        address: selectedTokenA,
-        abi: ERC20_ABI,
-        functionName: 'approve',
-        args: [ROUTER_ADDRESS, amountIn]
-      });
-
-      toast("Swapping tokens...", { icon: '🔃' });
-      const tx = await writeContractAsync({
-        abi: ROUTER_ABI,
-        address: ROUTER_ADDRESS,
-        functionName: 'swapExactTokensForTokens',
-        args: [
-          amountIn,
-          amountOutMin,
-          [selectedTokenA, selectedTokenB],
-          address,
-          BigInt(deadline)
-        ]
-      });
-    }
-
-    toast.success(
-      <div>
-        <p>Swap executed successfully!</p>
-      </div>,
-      { duration: 8000 }
-    );
-
-    setSwapFromAmount('');
-    setSwapToAmount('');
-    
-  } catch (error) {
-    console.error("Error swapping tokens:", error);
-    toast.error(
-      `Error: ${error instanceof Error ? error.message : 'Swap failed'}`
-    );
-  } finally {
-    toast.dismiss(loadingToast);
-  }
-};
+  };
 
 
- 
 
 
- 
+
+
 
   const { data: amountOutDataSwap, refetch: refetchAmountsOutSwap } = useReadContract({
     abi: ROUTER_ABI,
@@ -2471,14 +2483,14 @@ const handleSwapNew = async () => {
       setSwapToAmount('');
       return;
     }
-  
+
     const calculateTokenBAmount = async () => {
       try {
         setIsCalculating(true);
-        
+
         // Get fresh data directly from the refetch response
         const { data: freshAmountData } = await refetchAmountsOutSwap();
-        
+
         console.log("swap to amount", freshAmountData);
         if (freshAmountData && freshAmountData.length > 1) {
           const amountB = formatEther(freshAmountData[1]);
@@ -2491,13 +2503,13 @@ const handleSwapNew = async () => {
         setIsCalculating(false);
       }
     };
-  
+
     // Add basic debouncing
     const debounceTimer = setTimeout(calculateTokenBAmount, 300);
     return () => clearTimeout(debounceTimer);
   }, [selectedTokenA, selectedTokenB, swapFromAmount]);
 
- 
+
 
 
 
@@ -2979,7 +2991,7 @@ const handleSwapNew = async () => {
     }
   }
 
-  console.log("Volume data:", tokenBAmount);
+
 
 
   return (
@@ -3019,7 +3031,7 @@ const handleSwapNew = async () => {
               <button onClick={() => scrollToSection(swapSectionRef)}>Swap Tokens</button>
               <button onClick={() => scrollToSection(predictionSectionRef)}>Prediction</button>
             </div>
- 
+
             <div className="wallet-connect">
               {isConnected ? (
                 <button
@@ -3070,287 +3082,298 @@ const handleSwapNew = async () => {
 
         {/* Liquidity Section */}
         <div ref={liquiditySectionRef} className="section-container">
-  <div className="content-container">
-    <div className="section-content">
-      <div className="liquidity-description">
-        <h2>Liquidity Pools</h2>
-        <p className="glow-text">
-          Become a market maker in our Uniswap V2-powered liquidity pools and earn {' '}
-          <span className="highlight">0.3% fee on every trade</span> proportional to your stake. {' '}
-          <span className="highlight">APYs up to 45%</span> through FLR token rewards, while our optimized pool
-          architecture reduces impermanent loss by up to 30% compared to standard AMMs.
-          <span className="highlight">All pricing is continuously verified by Flare's decentralized oracle network, </span>
-          ensuring <span className="highlight">fair asset valuation</span> and protection against manipulation.
-        </p>
-        <div className="stats-grid">
-          <div className="stat-item">
-            <div className="stat-value">$42.8B</div>
-            <div className="stat-label">Total Value Locked</div>
+          <div className="content-container">
+            <div className="section-content">
+              <div className="liquidity-description">
+                <h2>Liquidity Pools</h2>
+                <p className="glow-text">
+                  Become a market maker in our Uniswap V2-powered liquidity pools and earn {' '}
+                  <span className="highlight">0.3% fee on every trade</span> proportional to your stake. {' '}
+                  <span className="highlight">APYs up to 45%</span> through FLR token rewards, while our optimized pool
+                  architecture reduces impermanent loss by up to 30% compared to standard AMMs.
+                  <span className="highlight">All pricing is continuously verified by Flare's decentralized oracle network, </span>
+                  ensuring <span className="highlight">fair asset valuation</span> and protection against manipulation.
+                </p>
+                <div className="stats-grid">
+                  <div className="stat-item">
+                    <div className="stat-value">$42.8B</div>
+                    <div className="stat-label">Total Value Locked</div>
+                  </div>
+                  <div className="stat-item">
+                    <div className="stat-value">1.2M</div>
+                    <div className="stat-label">Active Providers</div>
+                  </div>
+                  <div className="stat-item">
+                    <div className="stat-value">12-48%</div>
+                    <div className="stat-label">Average APY</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="liquidity-card-mod section-card">
+                <div className="card-content">
+                  <div className="liquidity-toggle-mod">
+                    <button
+                      className={`liquidity-toggle-btn-mod ${isAddLiquidity ? 'liquidity-toggle-btn-active-mod' : ''}`}
+                      onClick={() => setIsAddLiquidity(true)}
+                    >
+                      Add
+                    </button>
+                    <button
+                      className={`liquidity-toggle-btn-mod ${!isAddLiquidity ? 'liquidity-toggle-btn-active-mod' : ''}`}
+                      onClick={() => setIsAddLiquidity(false)}
+                    >
+                      Remove
+                    </button>
+                  </div>
+
+                  <h2>{isAddLiquidity ? 'Add' : 'Remove'} Liquidity</h2>
+
+                  <div className="token-select-wrapper-mod">
+                    <select
+                      className={`token-select-mod ${!isAddLiquidity ? 'token-select-disabled-mod' : ''}`}
+                      value={selectedTokenA}
+                      onChange={(e) => setSelectedTokenA(e.target.value as Address)}
+                      disabled={!isAddLiquidity}
+                    >
+                      {TOKEN_LIST.map(token => (
+                        <option key={token.address} value={token.address}>
+                          {token.symbol}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      className={`token-select-mod ${!isAddLiquidity ? 'token-select-disabled-mod' : ''}`}
+                      value={selectedTokenB}
+                      onChange={(e) => setSelectedTokenB(e.target.value as Address)}
+                      disabled={!isAddLiquidity}
+                    >
+                      {TOKEN_LIST.map(token => (
+                        <option key={token.address} value={token.address}>
+                          {token.symbol}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {isAddLiquidity ? (
+                    <>
+                      <div className="liquidity-input-group-mod">
+                        <input
+                          type="number"
+                          className="liquidity-input-mod"
+                          placeholder={`${getTokenSymbol(selectedTokenA)} Amount`}
+                          value={tokenAAmount}
+                          onChange={(e) => setTokenAAmount(e.target.value)}
+                        />
+                        <input
+                          type="number"
+                          className="liquidity-input-mod"
+                          placeholder={`${getTokenSymbol(selectedTokenB)} Amount`}
+                          value={tokenBAmount}
+                          readOnly
+                        />
+                      </div>
+                      <div className="liquidity-info-mod">
+                        {tokenAAmount ? (  <span>Pool Ratio: 1 {getTokenSymbol(selectedTokenA)} =
+                          {(Number(tokenBAmount) / Number(tokenAAmount)).toFixed(4)} {getTokenSymbol(selectedTokenB)}
+                        </span>): (<span>Pool Ratio: *Enter amount to know*</span>)}
+                      
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="liquidity-input-group-mod">
+           
+                        <span>
+                          Available LP:{' '}
+                          {lpBalance != null
+                            ? parseFloat(formatEther(lpBalance)).toFixed(4)
+                            : '0.0000'}
+                        </span>
+
+                        <input
+                          type="number"
+                          className="liquidity-input-mod"
+                          placeholder="LP Token Amount"
+                          value={lpAmount}
+                          onChange={(e) => setLpAmount(e.target.value)}
+                          max={Number(formatEther((lpBalance as bigint) || 0n))}
+                        />
+                      </div>
+                      <div className="liquidity-info-mod">
+                        <span>You will receive: </span>
+                        <span>{getTokenSymbol(selectedTokenA)}</span> &
+                        <span> {getTokenSymbol(selectedTokenB)}</span>
+                      </div>
+                    </>
+                  )}
+
+                  <button
+                    className={`liquidity-action-btn-mod ${(!isAddLiquidity && Number(lpAmount) <= 0) ? 'liquidity-action-btn-disabled-mod' : ''}`}
+                    onClick={handleLiquidityAction}
+                    disabled={!isAddLiquidity && Number(lpAmount) <= 0}
+                  >
+                    {isAddLiquidity ? 'Add Liquidity' : 'Remove Liquidity'}
+                  </button>
+
+                  <div className="liquidity-stats-mod">
+                    <div className="liquidity-stat-mod">
+                    <span>
+                          Available LP:{' '}
+                          {lpBalance != null
+                            ? parseFloat(formatEther(lpBalance)).toFixed(2)
+                            : '0.0000'}
+                        </span>
+                      <span className="liquidity-stat-label-mod">
+                        {isAddLiquidity ? 'Total Locked' : 'Your Stake'}
+                      </span>
+                    </div>
+                    <div className="liquidity-stat-mod">
+                      <span className="liquidity-stat-value-mod">12-48%</span>
+                      <span className="liquidity-stat-label-mod">APY Range</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="stat-item">
-            <div className="stat-value">1.2M</div>
-            <div className="stat-label">Active Providers</div>
-          </div>
-          <div className="stat-item">
-            <div className="stat-value">12-48%</div>
-            <div className="stat-label">Average APY</div>
-          </div>
         </div>
-      </div>
-
-      <div className="liquidity-card-mod section-card">
-  <div className="card-content">
-    <div className="liquidity-toggle-mod">
-      <button 
-        className={`liquidity-toggle-btn-mod ${isAddLiquidity ? 'liquidity-toggle-btn-active-mod' : ''}`}
-        onClick={() => setIsAddLiquidity(true)}
-      >
-        Add
-      </button>
-      <button 
-        className={`liquidity-toggle-btn-mod ${!isAddLiquidity ? 'liquidity-toggle-btn-active-mod' : ''}`}
-        onClick={() => setIsAddLiquidity(false)}
-      >
-        Remove
-      </button>
-    </div>
-
-    <h2>{isAddLiquidity ? 'Add' : 'Remove'} Liquidity</h2>
-    
-    <div className="token-select-wrapper-mod">
-      <select
-        className={`token-select-mod ${!isAddLiquidity ? 'token-select-disabled-mod' : ''}`}
-        value={selectedTokenA}
-        onChange={(e) => setSelectedTokenA(e.target.value as Address)}
-        disabled={!isAddLiquidity}
-      >
-        {TOKEN_LIST.map(token => (
-          <option key={token.address} value={token.address}>
-            {token.symbol}
-          </option>
-        ))}
-      </select>
-      <select 
-        className={`token-select-mod ${!isAddLiquidity ? 'token-select-disabled-mod' : ''}`}
-        value={selectedTokenB}
-        onChange={(e) => setSelectedTokenB(e.target.value as Address)}
-        disabled={!isAddLiquidity}
-      >
-        {TOKEN_LIST.map(token => (
-          <option key={token.address} value={token.address}>
-            {token.symbol}
-          </option>
-        ))}
-      </select>
-    </div>
-
-    {isAddLiquidity ? (
-      <>
-        <div className="liquidity-input-group-mod">
-          <input
-            type="number"
-            className="liquidity-input-mod"
-            placeholder={`${getTokenSymbol(selectedTokenA)} Amount`}
-            value={tokenAAmount}
-            onChange={(e) => setTokenAAmount(e.target.value)}
-          />
-          <input
-            type="number"
-            className="liquidity-input-mod"
-            placeholder={`${getTokenSymbol(selectedTokenB)} Amount`}
-            value={tokenBAmount}
-            readOnly
-          />
-        </div>
-        <div className="liquidity-info-mod">
-          <span>Pool Ratio: 1 {getTokenSymbol(selectedTokenA)} = 
-            {(Number(tokenBAmount)/Number(tokenAAmount)).toFixed(4)} {getTokenSymbol(selectedTokenB)}
-          </span>
-        </div>
-      </>
-    ) : (
-      <>
-        <div className="liquidity-input-group-mod">
-          <span>Available LP: {formatEther((lpBalance as bigint) || 0n)}</span>
-          <input
-            type="number"
-            className="liquidity-input-mod"
-            placeholder="LP Token Amount"
-            value={lpAmount}
-            onChange={(e) => setLpAmount(e.target.value)}
-            max={Number(formatEther((lpBalance as bigint) || 0n))}
-          />
-        </div>
-        <div className="liquidity-info-mod">
-          <span>You will receive:</span>
-          <span>{tokenAAmount} {getTokenSymbol(selectedTokenA)}</span>
-          <span>{tokenBAmount} {getTokenSymbol(selectedTokenB)}</span>
-        </div>
-      </>
-    )}
-
-    <button 
-      className={`liquidity-action-btn-mod ${(!isAddLiquidity && Number(lpAmount) <= 0) ? 'liquidity-action-btn-disabled-mod' : ''}`}
-      onClick={handleLiquidityAction}
-      disabled={!isAddLiquidity && Number(lpAmount) <= 0}
-    >
-      {isAddLiquidity ? 'Add Liquidity' : 'Remove Liquidity'}
-    </button>
-
-    <div className="liquidity-stats-mod">
-      <div className="liquidity-stat-mod">
-        <span className="liquidity-stat-value-mod">
-          {isAddLiquidity ? '$42.8B' : `${formatEther((lpBalance as bigint) || 0n)} LP`}
-        </span>
-        <span className="liquidity-stat-label-mod">
-          {isAddLiquidity ? 'Total Locked' : 'Your Stake'}
-        </span>
-      </div>
-      <div className="liquidity-stat-mod">
-        <span className="liquidity-stat-value-mod">12-48%</span>
-        <span className="liquidity-stat-label-mod">APY Range</span>
-      </div>
-    </div>
-  </div>
-</div>
-    </div>
-  </div>
-</div>
 
         {/* Swap Section */}
         <div ref={swapSectionRef} className="section-container">
-  <div className="content-container">
-    <div className="section-content reverse">
-      <div className="swap-description">
-        <h2 className="gradient-text">Token Swaps</h2>
-        <p className="glow-text">
-          <span className="flash-icon">⚡</span> Execute zero-gas, cross-chain swaps with <> </>
-          <span >Flare-verified pricing</span> that aggregates liquidity from
-          15+ DEXs. Our smart order routing dynamically calculates optimal paths
-          to deliver <span className="highlight">0.1% better rates</span> than leading aggregators, with
-          <span className="highlight">slippage protection up to $50k volumes</span>. Each trade is
-          cryptographically verified against Flare's decentralized oracle network
-          for <span className="highlight">front-running resistance</span> and MEV protection.
-        </p>
-        <div className="stats-grid">
-          <div className="stat-item pulse-glow">
-            <div className="stat-value">$1.2B</div>
-            <div className="stat-label">24h Volume</div>
-          </div>
-          <div className="stat-item pulse-glow">
-            <div className="stat-value">0.05%</div>
-            <div className="stat-label">Average Fee</div>
-          </div>
-          <div className="stat-item pulse-glow">
-            <div className="stat-value">12s</div>
-            <div className="stat-label">Avg. Swap Time</div>
-          </div>
-        </div>
-      </div>
+          <div className="content-container">
+            <div className="section-content reverse">
+              <div className="swap-description">
+                <h2 className="gradient-text">Token Swaps</h2>
+                <p className="glow-text">
+                  <span className="flash-icon">⚡</span> Execute zero-gas, cross-chain swaps with <> </>
+                  <span >Flare-verified pricing</span> that aggregates liquidity from
+                  15+ DEXs. Our smart order routing dynamically calculates optimal paths
+                  to deliver <span className="highlight">0.1% better rates</span> than leading aggregators, with
+                  <span className="highlight">slippage protection up to $50k volumes</span>. Each trade is
+                  cryptographically verified against Flare's decentralized oracle network
+                  for <span className="highlight">front-running resistance</span> and MEV protection.
+                </p>
+                <div className="stats-grid">
+                  <div className="stat-item pulse-glow">
+                    <div className="stat-value">$1.2B</div>
+                    <div className="stat-label">24h Volume</div>
+                  </div>
+                  <div className="stat-item pulse-glow">
+                    <div className="stat-value">0.05%</div>
+                    <div className="stat-label">Average Fee</div>
+                  </div>
+                  <div className="stat-item pulse-glow">
+                    <div className="stat-value">12s</div>
+                    <div className="stat-label">Avg. Swap Time</div>
+                  </div>
+                </div>
+              </div>
 
-      <div className="swap-card section-card neo-glass">
-        <div className="card-content">
-          <h2 className="card-title">Swap Tokens</h2>
-          <p className="card-subtitle">Get the best rates across DeFi</p>
+              <div className="swap-card section-card neo-glass">
+                <div className="card-content">
+                  <h2 className="card-title">Swap Tokens</h2>
+                  <p className="card-subtitle">Get the best rates across DeFi</p>
 
-          <div className="card-actions">
-            <div className="swap-input-container neo-inset">
-              <input
-                type="number"
-                placeholder="0.0"
-                className="swap-amount-input"
-                value={swapFromAmount}
-                onChange={(e) => setSwapFromAmount(e.target.value)}
-              />
-              <div className="token-select-wrapper">
-                <select
-                  className="token-select-right"
-                  value={selectedTokenA}
-                  onChange={(e) => setSelectedTokenA(e.target.value as Address)}
-                >
-                  {TOKEN_LIST.map(token => (
-                    <option key={token.address} value={token.address}>
-                      {token.symbol}
-                    </option>
-                  ))}
-                </select>
-                <div className={`token-icon ${getTokenSymbol(selectedTokenA).toLowerCase()}-icon`} />
+                  <div className="card-actions">
+                    <div className="swap-input-container neo-inset">
+                      <input
+                        type="number"
+                        placeholder="0.0"
+                        className="swap-amount-input"
+                        value={swapFromAmount}
+                        onChange={(e) => setSwapFromAmount(e.target.value)}
+                      />
+                      <div className="token-select-wrapper">
+                        <select
+                          className="token-select-right"
+                          value={selectedTokenA}
+                          onChange={(e) => setSelectedTokenA(e.target.value as Address)}
+                        >
+                          {TOKEN_LIST.map(token => (
+                            <option key={token.address} value={token.address}>
+                              {token.symbol}
+                            </option>
+                          ))}
+                        </select>
+                        <div className={`token-icon ${getTokenSymbol(selectedTokenA).toLowerCase()}-icon`} />
+                      </div>
+                    </div>
+
+                    <div className="swap-arrow-container">
+                      <button
+                        className="swap-arrow-circle"
+                        onClick={() => {
+                          const temp = selectedTokenA;
+                          setSelectedTokenA(selectedTokenB);
+                          setSelectedTokenB(temp);
+                        }}
+                      >
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="swap-arrow-icon">
+                          <path d="M12 4V20M12 20L18 14M12 20L6 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    <div className="swap-input-container neo-inset">
+                      <input
+                        type="number"
+                        placeholder="0.0"
+                        className="swap-amount-input"
+                        value={swapToAmount}
+                        readOnly
+                      />
+                      <div className="token-select-wrapper">
+                        <select
+                          className="token-select-right"
+                          value={selectedTokenB}
+                          onChange={(e) => setSelectedTokenB(e.target.value as Address)}
+                        >
+                          {TOKEN_LIST.map(token => (
+                            <option key={token.address} value={token.address}>
+                              {token.symbol}
+                            </option>
+                          ))}
+                        </select>
+                        <div className={`token-icon ${getTokenSymbol(selectedTokenB).toLowerCase()}-icon`} />
+                      </div>
+                    </div>
+
+                    <button
+                      className="action-btn pulse"
+                      onClick={handleSwapNew}
+                      disabled={isCalculating || !swapFromAmount}
+                    >
+                      {isCalculating ? <span>Calculating...</span> : <span>Swap Now</span>}
+                    </button>
+                  </div>
+
+                  <div className="rate-info">
+                    <span className="rate-label">Best rate:</span> {amountOutDataSwap? (<span className="rate-value">
+                      1 {getTokenSymbol(selectedTokenA)} =
+                      {swapToAmount && swapFromAmount
+                        ? (Number(swapToAmount) / Number(swapFromAmount)).toFixed(4)
+                        : '0.0000'} {getTokenSymbol(selectedTokenB)}
+                    </span>): (<span>*Enter amount to know*</span>)}
+                    
+                  </div>
+
+                  <div className="card-stats">
+                    <div className="stat">
+                      <span className="value">0.05%</span>
+                      <span className="label">Fee</span>
+                    </div>
+                    <div className="stat">
+                      <span className="value">$1.2B</span>
+                      <span className="label">Volume 24h</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-
-            <div className="swap-arrow-container">
-              <button 
-                className="swap-arrow-circle"
-                onClick={() => {
-                  const temp = selectedTokenA;
-                  setSelectedTokenA(selectedTokenB);
-                  setSelectedTokenB(temp);
-                }}
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="swap-arrow-icon">
-                  <path d="M12 4V20M12 20L18 14M12 20L6 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="swap-input-container neo-inset">
-              <input
-                type="number"
-                placeholder="0.0"
-                className="swap-amount-input"
-                value={swapToAmount}
-                readOnly
-              />
-              <div className="token-select-wrapper">
-                <select
-                  className="token-select-right"
-                  value={selectedTokenB}
-                  onChange={(e) => setSelectedTokenB(e.target.value as Address)}
-                >
-                  {TOKEN_LIST.map(token => (
-                    <option key={token.address} value={token.address}>
-                      {token.symbol}
-                    </option>
-                  ))}
-                </select>
-                <div className={`token-icon ${getTokenSymbol(selectedTokenB).toLowerCase()}-icon`} />
-              </div>
-            </div>
-
-            <button
-              className="action-btn pulse"
-              onClick={handleSwapNew}
-              disabled={isCalculating || !swapFromAmount}
-            >
-              {isCalculating ? <span>Calculating...</span> : <span>Swap Now</span>}
-            </button>
-          </div>
-
-          <div className="rate-info">
-            <span className="rate-label">Best rate:</span>
-            <span className="rate-value">
-              1 {getTokenSymbol(selectedTokenA)} = 
-              {swapToAmount && swapFromAmount 
-                ? (Number(swapToAmount)/Number(swapFromAmount)).toFixed(4)
-                : '0.0000'} {getTokenSymbol(selectedTokenB)}
-            </span>
-          </div>
-
-          <div className="card-stats">
-            <div className="stat">
-              <span className="value">0.05%</span>
-              <span className="label">Fee</span>
-            </div>
-            <div className="stat">
-              <span className="value">$1.2B</span>
-              <span className="label">Volume 24h</span>
-            </div>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
-</div>
 
         {/* Prediction Section */}
 

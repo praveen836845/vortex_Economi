@@ -344,7 +344,7 @@ export default function PredictionPage() {
   ] as const;
 
   const publicClient = usePublicClient();
-  // const {account} = useAccount();
+  const {address} = useAccount();
 
   interface LogEntry {
     address: string;
@@ -436,7 +436,7 @@ export default function PredictionPage() {
 
   const { data: tokensData } = useReadContract({
     abi: CRYPTO_POOL_ABI,
-    address: CRYPTO_POOL_ADDRESSES[asset as keyof typeof CRYPTO_POOL_ADDRESSES] as `0x${string}`,
+    address: CRYPTO_POOL_ADDRESSES[asset as keyof typeof CRYPTO_POOL_ADDRESSES] as Address,
     functionName: 'getTokens',
   });
 
@@ -447,32 +447,38 @@ export default function PredictionPage() {
         up: tokensData[0],
         down: tokensData[3]
       });
+      console.log("Token addresses: ", tokensData[0],"and",tokensData[3]);
+      console.log("Token Data", tokensData)
     }
   }, [tokensData]);
 
   // 3. Fetch balances only when addresses are available
-  const { data: upBalance } = useReadContract({
+  const { data: upBalance, refetch: refetchBalanceUp } = useReadContract({
     abi: ERC20_ABI,
     address: tokenAddresses.up as Address,
     functionName: 'balanceOf',
-    args:['0x0af700A3026adFddC10f7Aa8Ba2419e8503592f7'],
+    args:[address as Address],
   });
 
-  const { data: downBalance } = useReadContract({
+  const { data: downBalance, refetch: refetchBalanceDown } = useReadContract({
     abi: ERC20_ABI,
     address: tokenAddresses.down as Address,
     functionName: 'balanceOf',
-    args: ['0x0af700A3026adFddC10f7Aa8Ba2419e8503592f7'],
+    args: [address as Address],
   });
 
-  // 4. Update balances state when new data arrives
-  // useEffect(() => {
-  //   setBalances(prev => ({
-  //     ...prev,
-  //     ...(upBalance !== undefined && { up: upBalance }),
-  //     ...(downBalance !== undefined && { down: downBalance })
-  //   }));
-  // }, [upBalance, downBalance]);
+
+  useEffect(() => {
+    console.log('up address', tokenAddresses.up);
+    console.log('down address', tokenAddresses.down);
+    console.log('up balance', upBalance);
+    console.log('down balance', downBalance);
+
+    if (upBalance != null && downBalance != null) {
+      setBalances({ up: upBalance as bigint, down: downBalance as bigint });
+    }
+  }, [upBalance, downBalance, tokenAddresses.up, tokenAddresses.down]);
+
 
 
   useEffect(() => {
@@ -623,11 +629,11 @@ export default function PredictionPage() {
 
           <h2>Targated Price</h2>
           <div className="price-display">
-            {/* <span className="current-price">${formatEther(targetAmount ?? '')}</span> */}
+            <span className="current-price">${((targetAmount)).toString()}</span>
           </div>
           <div>
-  Balance of Token Up: {balances.up ? formatEther(balances.up) : ''}   ' '
-  And Down Tokens: {balances.down ? formatEther(balances.down) : ''}
+   Up ⬆️ tokens: {balances.up ? (formatEther(balances.up)).toString() : ''} <br/>
+   Down ⬇️ tokens: {balances.down ? (formatEther(balances.down)).toString() : ''}
 </div>
         </div>
         {marketResolved ? (
