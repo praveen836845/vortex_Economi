@@ -55,6 +55,7 @@ src/
 ## Usage
 1. **HomePage**
    - Connect wallet via injected provider (e.g., MetaMask on Flare).
+   - Connect to flare testnet using this https://chainlist.org/chain/114
    - Add/remove liquidity or swap tokens through the AMM router.
    - View live price and on‑chain swap rates.
 
